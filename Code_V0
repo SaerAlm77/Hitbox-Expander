@@ -250,6 +250,11 @@ LastProcessedLabel.Parent = Body
 
 local function looksLikeHitbox(part)
 	if not part:IsA("BasePart") then return false end
+
+	-- Reject any part belonging to a model that has a Humanoid
+	local model = part:FindFirstAncestorOfClass("Model")
+	if model and model:FindFirstChildOfClass("Humanoid") then return false end
+
 	local name = part.Name:lower()
 	if name:find("hitbox") then return true end
 	if part.Transparency >= 0.99 then
