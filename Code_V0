@@ -9,7 +9,7 @@ local SIZE_MULTIPLIER = 5
 local NEW_TRANSPARENCY = 0.6
 local TRANSPARENCY_STEP = 0.1
 
-local processed = {}
+local processed = {} -- [part] = originalSize
 
 local Gui = Instance.new("ScreenGui")
 Gui.Name = "HitboxVisualizer"
@@ -268,13 +268,26 @@ local function updateHitboxes()
 	HitboxVal.Text = tostring(count)
 end
 
+-- Reapply current settings to all already-processed parts
+local function reapplyToAll()
+	for part, originalSize in pairs(processed) do
+		if part and part.Parent then
+			part.Size = originalSize * SIZE_MULTIPLIER
+			part.Transparency = NEW_TRANSPARENCY
+		end
+	end
+end
+
 local function processPart(part)
 	if part.Name == "HumanoidRootPart" then return end
 	if processed[part] then return end
 	if not looksLikeHitbox(part) then return end
 
-	processed[part] = true
-	part.Size *= SIZE_MULTIPLIER
+	-- Store original size before any modification
+	local originalSize = part.Size
+	processed[part] = originalSize
+
+	part.Size = originalSize * SIZE_MULTIPLIER
 	part.Transparency = NEW_TRANSPARENCY
 	part.CastShadow = false
 
@@ -286,21 +299,25 @@ end
 SizeMinusBtn.MouseButton1Click:Connect(function()
 	SIZE_MULTIPLIER = math.max(1, SIZE_MULTIPLIER - 1)
 	SizeValueLabel.Text = tostring(SIZE_MULTIPLIER)
+	reapplyToAll()
 end)
 
 SizePlusBtn.MouseButton1Click:Connect(function()
 	SIZE_MULTIPLIER += 1
 	SizeValueLabel.Text = tostring(SIZE_MULTIPLIER)
+	reapplyToAll()
 end)
 
 TransMinusBtn.MouseButton1Click:Connect(function()
 	NEW_TRANSPARENCY = math.max(0, math.round((NEW_TRANSPARENCY - TRANSPARENCY_STEP) * 10) / 10)
 	TransValueLabel.Text = tostring(NEW_TRANSPARENCY)
+	reapplyToAll()
 end)
 
 TransPlusBtn.MouseButton1Click:Connect(function()
 	NEW_TRANSPARENCY = math.min(1, math.round((NEW_TRANSPARENCY + TRANSPARENCY_STEP) * 10) / 10)
 	TransValueLabel.Text = tostring(NEW_TRANSPARENCY)
+	reapplyToAll()
 end)
 
 for _, obj in ipairs(workspace:GetDescendants()) do
