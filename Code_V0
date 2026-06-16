@@ -1,0 +1,350 @@
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+local SIZE_MULTIPLIER = 5
+local NEW_TRANSPARENCY = 0.6
+local TRANSPARENCY_STEP = 0.1
+
+local processed = {}
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "HitboxVisualizer"
+Gui.ResetOnSpawn = false
+Gui.Parent = PlayerGui
+
+local Panel = Instance.new("Frame")
+Panel.Name = "Panel"
+Panel.Size = UDim2.fromOffset(280, 0)
+Panel.Position = UDim2.fromOffset(16, 16)
+Panel.AnchorPoint = Vector2.new(0, 0)
+Panel.BackgroundColor3 = Color3.fromRGB(14, 14, 14)
+Panel.AutomaticSize = Enum.AutomaticSize.Y
+Panel.Parent = Gui
+
+local PanelCorner = Instance.new("UICorner")
+PanelCorner.CornerRadius = UDim.new(0, 8)
+PanelCorner.Parent = Panel
+
+local PanelStroke = Instance.new("UIStroke")
+PanelStroke.Color = Color3.fromRGB(55, 55, 55)
+PanelStroke.Thickness = 1
+PanelStroke.Parent = Panel
+
+local PanelLayout = Instance.new("UIListLayout")
+PanelLayout.SortOrder = Enum.SortOrder.LayoutOrder
+PanelLayout.Padding = UDim.new(0, 0)
+PanelLayout.Parent = Panel
+
+local Header = Instance.new("Frame")
+Header.Name = "Header"
+Header.Size = UDim2.new(1, 0, 0, 40)
+Header.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+Header.BorderSizePixel = 0
+Header.LayoutOrder = 0
+Header.Parent = Panel
+
+local HeaderCorner = Instance.new("UICorner")
+HeaderCorner.CornerRadius = UDim.new(0, 8)
+HeaderCorner.Parent = Header
+
+local HeaderCoverBottom = Instance.new("Frame")
+HeaderCoverBottom.Size = UDim2.new(1, 0, 0, 8)
+HeaderCoverBottom.Position = UDim2.new(0, 0, 1, -8)
+HeaderCoverBottom.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+HeaderCoverBottom.BorderSizePixel = 0
+HeaderCoverBottom.Parent = Header
+
+local HeaderBottomStroke = Instance.new("Frame")
+HeaderBottomStroke.Size = UDim2.new(1, 0, 0, 1)
+HeaderBottomStroke.Position = UDim2.new(0, 0, 1, -1)
+HeaderBottomStroke.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+HeaderBottomStroke.BorderSizePixel = 0
+HeaderBottomStroke.Parent = Header
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Size = UDim2.new(1, -16, 1, 0)
+TitleLabel.Position = UDim2.fromOffset(14, 0)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextColor3 = Color3.fromRGB(235, 235, 235)
+TitleLabel.TextSize = 13
+TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
+TitleLabel.Text = "HITBOX VISUALIZER"
+TitleLabel.Parent = Header
+
+local Body = Instance.new("Frame")
+Body.Name = "Body"
+Body.Size = UDim2.new(1, 0, 0, 0)
+Body.BackgroundTransparency = 1
+Body.AutomaticSize = Enum.AutomaticSize.Y
+Body.LayoutOrder = 1
+Body.Parent = Panel
+
+local BodyLayout = Instance.new("UIListLayout")
+BodyLayout.SortOrder = Enum.SortOrder.LayoutOrder
+BodyLayout.Padding = UDim.new(0, 0)
+BodyLayout.Parent = Body
+
+local BodyPadding = Instance.new("UIPadding")
+BodyPadding.PaddingTop = UDim.new(0, 12)
+BodyPadding.PaddingBottom = UDim.new(0, 14)
+BodyPadding.PaddingLeft = UDim.new(0, 14)
+BodyPadding.PaddingRight = UDim.new(0, 14)
+BodyPadding.Parent = Body
+
+local function CreateDivider(order)
+	local D = Instance.new("Frame")
+	D.Size = UDim2.new(1, 0, 0, 1)
+	D.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+	D.BorderSizePixel = 0
+	D.LayoutOrder = order
+	D.Parent = Body
+end
+
+local function CreateStepper(labelText, displayText, layoutOrder)
+	local Row = Instance.new("Frame")
+	Row.Size = UDim2.new(1, 0, 0, 34)
+	Row.BackgroundTransparency = 1
+	Row.LayoutOrder = layoutOrder
+	Row.Parent = Body
+
+	local Lbl = Instance.new("TextLabel")
+	Lbl.Size = UDim2.new(0.5, 0, 1, 0)
+	Lbl.BackgroundTransparency = 1
+	Lbl.Font = Enum.Font.Gotham
+	Lbl.TextColor3 = Color3.fromRGB(130, 130, 130)
+	Lbl.TextSize = 12
+	Lbl.TextXAlignment = Enum.TextXAlignment.Left
+	Lbl.Text = labelText
+	Lbl.Parent = Row
+
+	local StepperFrame = Instance.new("Frame")
+	StepperFrame.Size = UDim2.fromOffset(90, 26)
+	StepperFrame.Position = UDim2.new(1, -90, 0.5, -13)
+	StepperFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 28)
+	StepperFrame.Parent = Row
+
+	local StepperCorner = Instance.new("UICorner")
+	StepperCorner.CornerRadius = UDim.new(0, 5)
+	StepperCorner.Parent = StepperFrame
+
+	local StepperStroke = Instance.new("UIStroke")
+	StepperStroke.Color = Color3.fromRGB(50, 50, 50)
+	StepperStroke.Thickness = 1
+	StepperStroke.Parent = StepperFrame
+
+	local MinusBtn = Instance.new("TextButton")
+	MinusBtn.Size = UDim2.fromOffset(26, 26)
+	MinusBtn.Position = UDim2.fromOffset(0, 0)
+	MinusBtn.BackgroundTransparency = 1
+	MinusBtn.Font = Enum.Font.GothamBold
+	MinusBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+	MinusBtn.TextSize = 15
+	MinusBtn.Text = "−"
+	MinusBtn.Parent = StepperFrame
+
+	local StepDivL = Instance.new("Frame")
+	StepDivL.Size = UDim2.fromOffset(1, 16)
+	StepDivL.Position = UDim2.new(0, 26, 0.5, -8)
+	StepDivL.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	StepDivL.BorderSizePixel = 0
+	StepDivL.Parent = StepperFrame
+
+	local ValueLabel = Instance.new("TextLabel")
+	ValueLabel.Size = UDim2.fromOffset(36, 26)
+	ValueLabel.Position = UDim2.fromOffset(27, 0)
+	ValueLabel.BackgroundTransparency = 1
+	ValueLabel.Font = Enum.Font.GothamMedium
+	ValueLabel.TextColor3 = Color3.fromRGB(210, 210, 210)
+	ValueLabel.TextSize = 12
+	ValueLabel.Text = displayText
+	ValueLabel.Parent = StepperFrame
+
+	local StepDivR = Instance.new("Frame")
+	StepDivR.Size = UDim2.fromOffset(1, 16)
+	StepDivR.Position = UDim2.new(0, 63, 0.5, -8)
+	StepDivR.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+	StepDivR.BorderSizePixel = 0
+	StepDivR.Parent = StepperFrame
+
+	local PlusBtn = Instance.new("TextButton")
+	PlusBtn.Size = UDim2.fromOffset(26, 26)
+	PlusBtn.Position = UDim2.fromOffset(64, 0)
+	PlusBtn.BackgroundTransparency = 1
+	PlusBtn.Font = Enum.Font.GothamBold
+	PlusBtn.TextColor3 = Color3.fromRGB(180, 180, 180)
+	PlusBtn.TextSize = 15
+	PlusBtn.Text = "+"
+	PlusBtn.Parent = StepperFrame
+
+	return MinusBtn, PlusBtn, ValueLabel
+end
+
+local SizeMinusBtn, SizePlusBtn, SizeValueLabel = CreateStepper("Size Multiplier", tostring(SIZE_MULTIPLIER), 1)
+
+CreateDivider(2)
+
+local TransMinusBtn, TransPlusBtn, TransValueLabel = CreateStepper("Transparency", tostring(NEW_TRANSPARENCY), 3)
+
+CreateDivider(4)
+
+local HitboxRow = Instance.new("Frame")
+HitboxRow.Size = UDim2.new(1, 0, 0, 28)
+HitboxRow.BackgroundTransparency = 1
+HitboxRow.LayoutOrder = 5
+HitboxRow.Parent = Body
+
+local HitboxLbl = Instance.new("TextLabel")
+HitboxLbl.Size = UDim2.new(0.6, 0, 1, 0)
+HitboxLbl.BackgroundTransparency = 1
+HitboxLbl.Font = Enum.Font.Gotham
+HitboxLbl.TextColor3 = Color3.fromRGB(130, 130, 130)
+HitboxLbl.TextSize = 12
+HitboxLbl.TextXAlignment = Enum.TextXAlignment.Left
+HitboxLbl.Text = "Detected"
+HitboxLbl.Parent = HitboxRow
+
+local HitboxVal = Instance.new("TextLabel")
+HitboxVal.Size = UDim2.new(0.4, 0, 1, 0)
+HitboxVal.Position = UDim2.new(0.6, 0, 0, 0)
+HitboxVal.BackgroundTransparency = 1
+HitboxVal.Font = Enum.Font.GothamMedium
+HitboxVal.TextColor3 = Color3.fromRGB(210, 210, 210)
+HitboxVal.TextSize = 12
+HitboxVal.TextXAlignment = Enum.TextXAlignment.Right
+HitboxVal.Text = "0"
+HitboxVal.Parent = HitboxRow
+
+CreateDivider(6)
+
+local LastLblRow = Instance.new("Frame")
+LastLblRow.Size = UDim2.new(1, 0, 0, 20)
+LastLblRow.BackgroundTransparency = 1
+LastLblRow.LayoutOrder = 7
+LastLblRow.Parent = Body
+
+local LastHeaderLbl = Instance.new("TextLabel")
+LastHeaderLbl.Size = UDim2.new(1, 0, 1, 0)
+LastHeaderLbl.BackgroundTransparency = 1
+LastHeaderLbl.Font = Enum.Font.Gotham
+LastHeaderLbl.TextColor3 = Color3.fromRGB(90, 90, 90)
+LastHeaderLbl.TextSize = 11
+LastHeaderLbl.TextXAlignment = Enum.TextXAlignment.Left
+LastHeaderLbl.Text = "LAST PROCESSED"
+LastHeaderLbl.Parent = LastLblRow
+
+local LastProcessedLabel = Instance.new("TextLabel")
+LastProcessedLabel.Size = UDim2.new(1, 0, 0, 22)
+LastProcessedLabel.BackgroundTransparency = 1
+LastProcessedLabel.Font = Enum.Font.GothamMedium
+LastProcessedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+LastProcessedLabel.TextSize = 12
+LastProcessedLabel.TextXAlignment = Enum.TextXAlignment.Left
+LastProcessedLabel.Text = "None"
+LastProcessedLabel.LayoutOrder = 8
+LastProcessedLabel.Parent = Body
+
+local function looksLikeHitbox(part)
+	if not part:IsA("BasePart") then return false end
+	local name = part.Name:lower()
+	if name:find("hitbox") then return true end
+	if part.Transparency >= 0.99 then
+		if not part.CanCollide then return true end
+		local color = part.Color
+		if color.R > 0.6 and color.G < 0.3 and color.B < 0.3 then return true end
+	end
+	return false
+end
+
+local function updateHitboxes()
+	local count = 0
+	for part in pairs(processed) do
+		if part and part.Parent then count += 1 end
+	end
+	HitboxVal.Text = tostring(count)
+end
+
+local function processPart(part)
+	if part.Name == "HumanoidRootPart" then return end
+	if processed[part] then return end
+	if not looksLikeHitbox(part) then return end
+
+	processed[part] = true
+	part.Size *= SIZE_MULTIPLIER
+	part.Transparency = NEW_TRANSPARENCY
+	part.CastShadow = false
+
+	LastProcessedLabel.Text = part.Name
+	updateHitboxes()
+	print("[HitboxViz]", part:GetFullName())
+end
+
+SizeMinusBtn.MouseButton1Click:Connect(function()
+	SIZE_MULTIPLIER = math.max(1, SIZE_MULTIPLIER - 1)
+	SizeValueLabel.Text = tostring(SIZE_MULTIPLIER)
+end)
+
+SizePlusBtn.MouseButton1Click:Connect(function()
+	SIZE_MULTIPLIER += 1
+	SizeValueLabel.Text = tostring(SIZE_MULTIPLIER)
+end)
+
+TransMinusBtn.MouseButton1Click:Connect(function()
+	NEW_TRANSPARENCY = math.max(0, math.round((NEW_TRANSPARENCY - TRANSPARENCY_STEP) * 10) / 10)
+	TransValueLabel.Text = tostring(NEW_TRANSPARENCY)
+end)
+
+TransPlusBtn.MouseButton1Click:Connect(function()
+	NEW_TRANSPARENCY = math.min(1, math.round((NEW_TRANSPARENCY + TRANSPARENCY_STEP) * 10) / 10)
+	TransValueLabel.Text = tostring(NEW_TRANSPARENCY)
+end)
+
+for _, obj in ipairs(workspace:GetDescendants()) do
+	processPart(obj)
+end
+
+workspace.DescendantAdded:Connect(processPart)
+
+local dragging = false
+local dragStart
+local startPos
+local targetPos = Panel.Position
+local currentPos = Panel.Position
+
+Panel.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = targetPos
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		targetPos = UDim2.new(
+			startPos.X.Scale, startPos.X.Offset + delta.X,
+			startPos.Y.Scale, startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+RunService.RenderStepped:Connect(function(dt)
+	local alpha = math.clamp(dt * 10, 0, 1)
+	currentPos = UDim2.new(
+		currentPos.X.Scale,
+		currentPos.X.Offset + (targetPos.X.Offset - currentPos.X.Offset) * alpha,
+		currentPos.Y.Scale,
+		currentPos.Y.Offset + (targetPos.Y.Offset - currentPos.Y.Offset) * alpha
+	)
+	Panel.Position = currentPos
+end)
